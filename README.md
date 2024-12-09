@@ -61,7 +61,7 @@ python manage.py migrate
 
 5. **导入历史数据**
 ```bash
-python manage.py crawl_lottery --init
+python manage.py lottery_scheduler --init
 ```
 
 ## 启动项目
@@ -79,16 +79,10 @@ python manage.py runserver
 系统包含以下定时任务：
 
 1. **数据更新任务**
-```bash
-python manage.py update_lottery
-```
 - 自动更新最新开奖数据
 - 建议通过cron或计划任务定期执行
 
 2. **预测分析任务**
-```bash
-python manage.py test_predictions
-```
 - 用于测试预测效果
 - 可选择性执行
 
