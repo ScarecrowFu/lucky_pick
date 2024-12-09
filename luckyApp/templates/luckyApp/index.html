@@ -1,0 +1,104 @@
+{% extends 'luckyApp/base.html' %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+<div class="row text-center mb-5">
+    <div class="col-12">
+        <h1 class="display-4">双色球智能选号</h1>
+        <p class="lead">基于大数据分析的智能预测系统</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 开奖信息卡片 -->
+    <div class="col-md-4">
+        <div class="card feature-card h-100" data-href="{% url 'luckyApp:index' %}">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy card-icon"></i>
+                <h3 class="card-title">开奖信息</h3>
+                <p class="card-text">查看最新开奖结果和开奖动态</p>
+                <div class="latest-draw mt-3">
+                    {% if latest_records %}
+                    <p class="mb-2">最新期号：{{ latest_records.0.draw_num }}</p>
+                    <div class="lottery-numbers">
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_1 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_2 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_3 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_4 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_5 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_records.0.red_ball_6 }}</span>
+                        <span class="lottery-ball blue-ball">{{ latest_records.0.blue_ball }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能预测卡片 -->
+    <div class="col-md-4">
+        <div class="card feature-card h-100" data-href="{% url 'luckyApp:predictions' %}">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up card-icon"></i>
+                <h3 class="card-title">智能分析</h3>
+                <p class="card-text">使用大数据分析和人工智能算法进行智能分析</p>
+                <div class="prediction-stats mt-3">
+                    {% if latest_predictions %}
+                    <p class="mb-2">最新预测：</p>
+                    <div class="lottery-numbers">
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_1 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_2 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_3 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_4 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_5 }}</span>
+                        <span class="lottery-ball red-ball">{{ latest_predictions.0.red_ball_6 }}</span>
+                        <span class="lottery-ball blue-ball">{{ latest_predictions.0.blue_ball }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史数据卡片 -->
+    <div class="col-md-4">
+        <div class="card feature-card h-100" data-href="{% url 'luckyApp:history' %}">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history card-icon"></i>
+                <h3 class="card-title">历史数据</h3>
+                <p class="card-text">查看历史开奖记录和数据统计分析</p>
+                <div class="history-stats mt-3">
+                    <p class="mb-2">数据统计</p>
+                    <div class="row">
+                        <div class="col">
+                            <h4>{{ total_records }}</h4>
+                            <p class="text-muted">历史记录</p>
+                        </div>
+                        <div class="col">
+                            <h4>{{ hit_rate }}%</h4>
+                            <p class="text-muted">预测命中率</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加卡片点击效果
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const href = this.getAttribute('data-href');
+            if (href) {
+                window.location.href = href;
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

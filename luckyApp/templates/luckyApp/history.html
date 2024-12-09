@@ -1,0 +1,119 @@
+{% extends 'luckyApp/base.html' %}
+
+{% block title %}历史开奖{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">历史开奖记录</h5>
+        <button id="updateBtn" class="btn btn-primary btn-sm">更新最新数据</button>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            总记录数：{{ page_obj.paginator.count }}
+            当前页：{{ page_obj.number }}
+            总页数：{{ page_obj.paginator.num_pages }}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>期号</th>
+                        <th>开奖日期</th>
+                        <th>开奖号码</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in page_obj %}
+                        <tr>
+                            <td>{{ record.draw_num }}</td>
+                            <td>{{ record.draw_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_1 }}</span>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_2 }}</span>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_3 }}</span>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_4 }}</span>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_5 }}</span>
+                                <span class="lottery-ball red-ball">{{ record.red_ball_6 }}</span>
+                                <span class="lottery-ball blue-ball">{{ record.blue_ball }}</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">暂无数据</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const updateBtn = document.getElementById('updateBtn');
+    
+    updateBtn.addEventListener('click', async function() {
+        try {
+            updateBtn.disabled = true;
+            updateBtn.textContent = '更新中...';
+            
+            const response = await axios.post('{% url "luckyApp:update_data" %}');
+            if (response.data.status === 'success') {
+                alert(response.data.message);
+                location.reload();
+            } else {
+                alert(response.data.message);
+            }
+        } catch (error) {
+            alert('更新数据失败');
+            console.error('更新失败:', error);
+        } finally {
+            updateBtn.disabled = false;
+            updateBtn.textContent = '更新最新数据';
+        }
+    });
+});
+</script>
+{% endblock %} 

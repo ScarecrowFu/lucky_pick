@@ -1,0 +1,352 @@
+{% extends 'luckyApp/base.html' %}
+
+{% block title %}智能分析{% endblock %}
+
+{% block content %}
+<!-- Toast提示框 -->
+<div class="toast-container position-fixed start-50 translate-middle-x" style="top: 20px; z-index: 1050;">
+    <div id="messageToast" class="toast align-items-center border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center">
+                <i class="bi me-2" id="toastIcon"></i>
+                <span id="toastMessage"></span>
+            </div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-4">智能分析系统</h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- 随机选号 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">随机选号</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">生成完全随机的双色球号码</p>
+                <button id="randomBtn" class="btn btn-primary">生成随机号码</button>
+                <div id="randomResult" class="mt-3 d-none">
+                    <h6>随机号码：</h6>
+                    <div id="randomBalls"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能分析 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">智能分析</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">基于历史数据分析的智能算法</p>
+                <button id="predictBtn" class="btn btn-success">生成分析号码</button>
+                <div id="predictResult" class="mt-3 d-none">
+                    <h6>分析号码：</h6>
+                    <div id="predictBalls"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析记录 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">分析记录</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>期号</th>
+                                <th>分析号码</th>
+                                <th>分析类型</th>
+                                <th>分析时间</th>
+                                <th style="min-width: 200px;">命中情况</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in page_obj %}
+                            <tr>
+                                <td>{{ pred.draw_num }}</td>
+                                <td>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_1 }}</span>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_2 }}</span>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_3 }}</span>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_4 }}</span>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_5 }}</span>
+                                    <span class="lottery-ball red-ball">{{ pred.red_ball_6 }}</span>
+                                    <span class="lottery-ball blue-ball">{{ pred.blue_ball }}</span>
+                                </td>
+                                <td>
+                                    {% if pred.prediction_type == 'random' %}
+                                        随机选号
+                                    {% else %}
+                                        智能分析
+                                    {% endif %}
+                                </td>
+                                <td>{{ pred.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if pred.draw_num > latest_draw_num %}
+                                        <span class="badge bg-info">待开奖</span>
+                                    {% else %}
+                                        {% with red_hits=pred.hit_count %}
+                                            {% if pred.is_hit %}
+                                                {% if red_hits == 6 and pred.blue_hit %}
+                                                    <span class="badge bg-success">一等奖 (6+1)</span>
+                                                {% elif red_hits == 6 %}
+                                                    <span class="badge bg-success">二等奖 (6+0)</span>
+                                                {% elif red_hits == 5 and pred.blue_hit %}
+                                                    <span class="badge bg-success">三等奖 (5+1)</span>
+                                                {% elif red_hits == 5 or red_hits == 4 and pred.blue_hit %}
+                                                    <span class="badge bg-success">四等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
+                                                {% elif red_hits == 4 or red_hits == 3 and pred.blue_hit %}
+                                                    <span class="badge bg-success">五等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">六等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <div>
+                                                    <span class="badge bg-secondary">未中奖</span>
+                                                    <small class="text-muted ms-2">
+                                                        红球: {{ red_hits }} 个
+                                                        {% if pred.blue_hit %}
+                                                            , 蓝球: 1 个
+                                                        {% else %}
+                                                            , 蓝球: 0 个
+                                                        {% endif %}
+                                                        ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">&laquo; 首页</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页 &raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const randomBtn = document.getElementById('randomBtn');
+    const predictBtn = document.getElementById('predictBtn');
+    const randomResult = document.getElementById('randomResult');
+    const predictResult = document.getElementById('predictResult');
+    const randomBalls = document.getElementById('randomBalls');
+    const predictBalls = document.getElementById('predictBalls');
+    const messageToast = new bootstrap.Toast(document.getElementById('messageToast'), {
+        delay: 3000,
+        animation: true
+    });
+    
+    let nextDrawNum = null;
+
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('messageToast');
+        const iconEl = document.getElementById('toastIcon');
+        const messageEl = document.getElementById('toastMessage');
+        
+        // 重置样式
+        toastEl.className = 'toast align-items-center border-0 shadow-lg';
+        
+        // 设置样式和图标
+        if (type === 'success') {
+            toastEl.classList.add('bg-success', 'text-white');
+            iconEl.className = 'bi bi-check-circle-fill me-2';
+        } else if (type === 'error') {
+            toastEl.classList.add('bg-danger', 'text-white');
+            iconEl.className = 'bi bi-x-circle-fill me-2';
+        } else if (type === 'warning') {
+            toastEl.classList.add('bg-warning', 'text-dark');
+            iconEl.className = 'bi bi-exclamation-triangle-fill me-2';
+        }
+        
+        messageEl.textContent = message;
+        messageToast.show();
+    }
+
+    function createBallElement(number, isBlue = false) {
+        const ball = document.createElement('span');
+        ball.className = `lottery-ball ${isBlue ? 'blue-ball' : 'red-ball'}`;
+        ball.textContent = number;
+        return ball;
+    }
+
+    function displayNumbers(container, numbers) {
+        container.innerHTML = '';
+        const [redBalls, blueBall] = numbers;
+        redBalls.forEach(num => {
+            container.appendChild(createBallElement(num));
+        });
+        container.appendChild(createBallElement(blueBall, true));
+        
+        // 添加记录按钮
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-outline-primary btn-sm mt-2 save-btn';
+        saveBtn.textContent = '记录本次选号';
+        saveBtn.dataset.redBalls = JSON.stringify(redBalls);
+        saveBtn.dataset.blueBall = blueBall;
+        container.appendChild(saveBtn);
+    }
+
+    async function updatePredictionsList() {
+        try {
+            const response = await axios.get('{% url "luckyApp:get_latest_predictions" %}');
+            document.querySelector('tbody').innerHTML = response.data.predictions_html;
+            document.querySelector('.pagination').innerHTML = response.data.pagination_html;
+        } catch (error) {
+            console.error('更新预测记录失败:', error);
+            showToast('更新预测记录失败', 'error');
+        }
+    }
+
+    async function savePrediction(redBalls, blueBall, type) {
+        try {
+            const response = await axios.post('{% url "luckyApp:save_prediction" %}', {
+                draw_num: nextDrawNum,
+                red_balls: redBalls,
+                blue_ball: blueBall,
+                prediction_type: type
+            });
+            
+            if (response.data.status === 'success') {
+                showToast('预测号码已保存');
+                // 只更新预测记录列表
+                updatePredictionsList();
+            } else {
+                showToast(response.data.message || '保存失败', 'error');
+            }
+        } catch (error) {
+            showToast(error.response?.data?.message || '保存失败', 'error');
+        }
+    }
+
+    randomBtn.addEventListener('click', async function() {
+        try {
+            randomBtn.disabled = true;
+            const response = await axios.post('{% url "luckyApp:generate_random" %}');
+            randomResult.classList.remove('d-none');
+            nextDrawNum = response.data.draw_num;
+            randomBalls.innerHTML = '';
+            
+            response.data.predictions.forEach((pred, index) => {
+                const predDiv = document.createElement('div');
+                predDiv.className = 'mb-3';
+                predDiv.innerHTML = `<small>随机${index + 1}：</small>`;
+                const ballsDiv = document.createElement('div');
+                displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
+                predDiv.appendChild(ballsDiv);
+                randomBalls.appendChild(predDiv);
+            });
+        } catch (error) {
+            showToast('生成随机号码失败', 'error');
+        } finally {
+            randomBtn.disabled = false;
+        }
+    });
+
+    predictBtn.addEventListener('click', async function() {
+        try {
+            predictBtn.disabled = true;
+            const response = await axios.post('{% url "luckyApp:generate_prediction" %}');
+            predictResult.classList.remove('d-none');
+            nextDrawNum = response.data.draw_num;
+            predictBalls.innerHTML = '';
+            
+            response.data.predictions.forEach((pred, index) => {
+                const predDiv = document.createElement('div');
+                predDiv.className = 'mb-3';
+                predDiv.innerHTML = `<small>预测${index + 1}：</small>`;
+                const ballsDiv = document.createElement('div');
+                displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
+                predDiv.appendChild(ballsDiv);
+                predictBalls.appendChild(predDiv);
+            });
+        } catch (error) {
+            showToast('生成预测号码失败', 'error');
+        } finally {
+            predictBtn.disabled = false;
+        }
+    });
+
+    // 为所有记录按钮添加点击事件（使用事件委托）
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('save-btn')) {
+            const redBalls = JSON.parse(e.target.dataset.redBalls);
+            const blueBall = parseInt(e.target.dataset.blueBall);
+            const type = e.target.closest('.card').querySelector('.card-title').textContent.includes('随机') ? 'random' : 'analysis';
+            savePrediction(redBalls, blueBall, type);
+        }
+    });
+
+    // 为分页链接添加点击事件（使用事件委托）
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('page-link')) {
+            e.preventDefault();
+            const href = e.target.getAttribute('href');
+            if (href) {
+                const page = new URLSearchParams(href.split('?')[1]).get('page');
+                if (page) {
+                    axios.get(`{% url "luckyApp:get_latest_predictions" %}?page=${page}`)
+                        .then(response => {
+                            document.querySelector('tbody').innerHTML = response.data.predictions_html;
+                            document.querySelector('.pagination').innerHTML = response.data.pagination_html;
+                        })
+                        .catch(error => {
+                            console.error('加载页面失败:', error);
+                            showToast('加载页面失败', 'error');
+                        });
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
