@@ -1,0 +1,6 @@
+Django==5.1.4
+requests==2.31.0
+beautifulsoup4==4.12.2
+numpy==1.26.2
+python-dateutil==2.8.2
+schedule==1.2.1 
