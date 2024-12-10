@@ -145,7 +145,7 @@
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1">&laquo; 首页</a>
+                                <a class="page-link" href="?page=1">&laquo; 首��</a>
                             </li>
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
@@ -296,21 +296,27 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             predictBtn.disabled = true;
             const response = await axios.post('{% url "luckyApp:generate_prediction" %}');
-            predictResult.classList.remove('d-none');
-            nextDrawNum = response.data.draw_num;
-            predictBalls.innerHTML = '';
             
-            response.data.predictions.forEach((pred, index) => {
-                const predDiv = document.createElement('div');
-                predDiv.className = 'mb-3';
-                predDiv.innerHTML = `<small>预测${index + 1}：</small>`;
-                const ballsDiv = document.createElement('div');
-                displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
-                predDiv.appendChild(ballsDiv);
-                predictBalls.appendChild(predDiv);
-            });
+            if (response.data.status === 'success') {
+                predictResult.classList.remove('d-none');
+                nextDrawNum = response.data.draw_num;
+                predictBalls.innerHTML = '';
+                
+                response.data.predictions.forEach((pred, index) => {
+                    const predDiv = document.createElement('div');
+                    predDiv.className = 'mb-3';
+                    predDiv.innerHTML = `<small>预测${index + 1}：</small>`;
+                    const ballsDiv = document.createElement('div');
+                    displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
+                    predDiv.appendChild(ballsDiv);
+                    predictBalls.appendChild(predDiv);
+                });
+            } else {
+                showToast(response.data.message || '生成预测号码失败', 'error');
+            }
         } catch (error) {
-            showToast('生成预测号码失败', 'error');
+            console.error('生成预测号码失败:', error);
+            showToast(error.response?.data?.message || '生成预测号码失败', 'error');
         } finally {
             predictBtn.disabled = false;
         }

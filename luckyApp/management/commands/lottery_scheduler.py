@@ -121,15 +121,27 @@ class Command(BaseCommand):
             blue_ball = random.randint(1, 16)
             
             # 4. 创建新的开奖记录
+            # new_record = LotteryHistory.objects.create(
+            #     draw_num=next_draw_num,
+            #     red_ball_1=red_balls[0],
+            #     red_ball_2=red_balls[1],
+            #     red_ball_3=red_balls[2],
+            #     red_ball_4=red_balls[3],
+            #     red_ball_5=red_balls[4],
+            #     red_ball_6=red_balls[5],
+            #     blue_ball=blue_ball,
+            #     draw_date=timezone.now().date()
+            # )
+            # 测试
             new_record = LotteryHistory.objects.create(
                 draw_num=next_draw_num,
-                red_ball_1=red_balls[0],
-                red_ball_2=red_balls[1],
-                red_ball_3=red_balls[2],
-                red_ball_4=red_balls[3],
+                red_ball_1=6,
+                red_ball_2=11,
+                red_ball_3=12,
+                red_ball_4=21,
                 red_ball_5=red_balls[4],
                 red_ball_6=red_balls[5],
-                blue_ball=blue_ball,
+                blue_ball=7,
                 draw_date=timezone.now().date()
             )
             
@@ -137,7 +149,7 @@ class Command(BaseCommand):
                 self.style.SUCCESS(
                     f"已生成测试数据 期号:{next_draw_num}\n"
                     f"红球: {red_balls}\n"
-                    f"蓝��: {blue_ball}"
+                    f"蓝球: {blue_ball}"
                 )
             )
             

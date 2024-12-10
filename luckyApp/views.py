@@ -68,7 +68,7 @@ def generate_random(request):
     """生成随机号码"""
     predictor = LotteryPredictor()
     
-    # 获��新期号
+    # 获��最新期号
     latest_record = LotteryHistory.objects.all().order_by('-draw_num').first()
     next_draw_num = str(int(latest_record.draw_num) + 1) if latest_record else "未知"
     
@@ -89,17 +89,37 @@ def generate_random(request):
 @require_http_methods(["POST"])
 def generate_prediction(request):
     """生成智能预测号码"""
-    predictor = LotteryPredictor()
-    predictions = predictor.predict_based_on_frequency(num_predictions=5)
-    
-    # 获取最新期号
-    latest_record = LotteryHistory.objects.all().order_by('-draw_num').first()
-    next_draw_num = str(int(latest_record.draw_num) + 1) if latest_record else "未知"
-    
-    return JsonResponse({
-        'predictions': predictions,
-        'draw_num': next_draw_num
-    })
+    try:
+        predictor = LotteryPredictor()
+        predictions = predictor.predict_based_on_frequency(num_predictions=5)
+        
+        # 获取最新期号
+        latest_record = LotteryHistory.objects.all().order_by('-draw_num').first()
+        next_draw_num = str(int(latest_record.draw_num) + 1) if latest_record else "未知"
+        
+        # 确保返回格式正确
+        formatted_predictions = []
+        for pred in predictions:
+            formatted_predictions.append({
+                'red_balls': pred['red_balls'],
+                'blue_ball': pred['blue_ball'],
+                'score': pred.get('score', 0),
+                'analysis': pred.get('analysis', {})
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'predictions': formatted_predictions,
+            'draw_num': next_draw_num,
+            'message': '预测生成成功'
+        })
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # 打印详细错误信息
+        return JsonResponse({
+            'status': 'error',
+            'message': f'生成预测失败: {str(e)}'
+        }, status=500)
 
 @require_http_methods(["POST"])
 def save_prediction(request):
