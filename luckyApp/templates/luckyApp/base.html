@@ -43,11 +43,53 @@
         }
         .main-container {
             padding: 2rem 0;
+            position: relative;
+            min-height: calc(100vh - 200px);
         }
         .card-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
             color: #2c3e50;
+        }
+
+        /* 图片展示区域样式 */
+        .floating-images {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 200px;
+            z-index: -1;
+        }
+        .floating-left {
+            left: 20px;
+        }
+        .floating-right {
+            right: 20px;
+        }
+        .mobile-images {
+            display: none;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .mobile-images img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 1400px) {
+            .floating-images {
+                width: 150px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .floating-images {
+                display: none;
+            }
+            .mobile-images {
+                display: block;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
@@ -72,8 +114,21 @@
         </div>
     </nav>
 
+    <!-- PC端浮动图片 -->
+    <div class="floating-images floating-left d-none d-xl-block">
+        <img src="https://pick.aitiger.cc/media/check2.png" alt="分析图" class="img-fluid">
+    </div>
+    <div class="floating-images floating-right d-none d-xl-block">
+        <img src="https://pick.aitiger.cc/media/check2.png" alt="分析图" class="img-fluid">
+    </div>
+
     <div class="container main-container">
         {% block content %}{% endblock %}
+
+        <!-- 移动端底部图片 -->
+        <div class="mobile-images">
+            <img src="https://pick.aitiger.cc/media/check2.png" alt="分析图" class="img-fluid rounded shadow">
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
