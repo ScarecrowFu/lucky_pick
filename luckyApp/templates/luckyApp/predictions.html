@@ -16,6 +16,96 @@
     </div>
 </div>
 
+<style>
+    .lottery-numbers {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 5px 0;
+        gap: 4px;
+        justify-content: center;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .lottery-numbers::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .lottery-ball {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        font-size: 14px;
+    }
+
+    .prediction-mobile-view {
+        padding: 12px;
+        border-bottom: 1px solid rgba(0,0,0,.1);
+    }
+
+    .prediction-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #666;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .prediction-group {
+        background-color: rgba(0,0,0,0.02);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .prediction-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 767px) {
+        .lottery-ball {
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            font-size: 13px;
+        }
+
+        .prediction-row {
+            margin-bottom: 8px;
+            background-color: #fff;
+        }
+
+        .table td {
+            border: none;
+            padding: 0;
+        }
+
+        .table {
+            border: none;
+        }
+
+        .pagination {
+            padding: 0 15px;
+        }
+
+        .page-link {
+            padding: 0.375rem 0.75rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+
 <div class="row mb-4">
     <div class="col-12">
         <h2 class="text-center mb-4">智能分析系统</h2>
@@ -65,75 +155,84 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">分析记录</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover mb-0">
                         <thead>
-                            <tr>
+                            <tr class="d-none d-md-table-row">
                                 <th>期号</th>
                                 <th>分析号码</th>
                                 <th>分析类型</th>
                                 <th>分析时间</th>
-                                <th style="min-width: 200px;">命中情况</th>
+                                <th>命中情况</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for pred in page_obj %}
-                            <tr>
-                                <td>{{ pred.draw_num }}</td>
-                                <td>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_1 }}</span>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_2 }}</span>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_3 }}</span>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_4 }}</span>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_5 }}</span>
-                                    <span class="lottery-ball red-ball">{{ pred.red_ball_6 }}</span>
-                                    <span class="lottery-ball blue-ball">{{ pred.blue_ball }}</span>
-                                </td>
-                                <td>
-                                    {% if pred.prediction_type == 'random' %}
-                                        随机选号
-                                    {% else %}
-                                        智能分析
-                                    {% endif %}
-                                </td>
-                                <td>{{ pred.created_at|date:"Y-m-d H:i" }}</td>
-                                <td>
-                                    {% if pred.draw_num > latest_draw_num %}
-                                        <span class="badge bg-info">待开奖</span>
-                                    {% else %}
-                                        {% with red_hits=pred.hit_count %}
-                                            {% if pred.is_hit %}
-                                                {% if red_hits == 6 and pred.blue_hit %}
-                                                    <span class="badge bg-success">一等奖 (6+1)</span>
-                                                {% elif red_hits == 6 %}
-                                                    <span class="badge bg-success">二等奖 (6+0)</span>
-                                                {% elif red_hits == 5 and pred.blue_hit %}
-                                                    <span class="badge bg-success">三等奖 (5+1)</span>
-                                                {% elif red_hits == 5 or red_hits == 4 and pred.blue_hit %}
-                                                    <span class="badge bg-success">四等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
-                                                {% elif red_hits == 4 or red_hits == 3 and pred.blue_hit %}
-                                                    <span class="badge bg-success">五等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
+                            <tr class="prediction-row">
+                                <!-- 移动端显示 -->
+                                <td class="d-md-none">
+                                    <div class="prediction-mobile-view">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-primary">期号：{{ pred.draw_num }}</span>
+                                            {% if pred.is_drawn %}
+                                                {% if pred.is_hit %}
+                                                    <span class="badge bg-success">命中{{ pred.hit_prize_level }}等奖</span>
                                                 {% else %}
-                                                    <span class="badge bg-success">六等奖 ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})</span>
+                                                    <span class="badge bg-secondary">未中奖</span>
                                                 {% endif %}
                                             {% else %}
-                                                <div>
-                                                    <span class="badge bg-secondary">未中奖</span>
-                                                    <small class="text-muted ms-2">
-                                                        红球: {{ red_hits }} 个
-                                                        {% if pred.blue_hit %}
-                                                            , 蓝球: 1 个
-                                                        {% else %}
-                                                            , 蓝球: 0 个
-                                                        {% endif %}
-                                                        ({{ red_hits }}+{% if pred.blue_hit %}1{% else %}0{% endif %})
-                                                    </small>
-                                                </div>
+                                                <span class="badge bg-warning text-dark">待开奖</span>
                                             {% endif %}
-                                        {% endwith %}
+                                        </div>
+                                        <div class="lottery-numbers mb-2">
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_1 }}</span>
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_2 }}</span>
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_3 }}</span>
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_4 }}</span>
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_5 }}</span>
+                                            <span class="lottery-ball red-ball">{{ pred.red_ball_6 }}</span>
+                                            <span class="lottery-ball blue-ball">{{ pred.blue_ball }}</span>
+                                        </div>
+                                        <div class="prediction-info">
+                                            <small class="text-muted">
+                                                {{ pred.get_prediction_type_display }} | 
+                                                {{ pred.created_at|date:"Y-m-d H:i" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- PC端显示 -->
+                                <td class="d-none d-md-table-cell">{{ pred.draw_num }}</td>
+                                <td class="d-none d-md-table-cell">
+                                    <div class="lottery-numbers">
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_1 }}</span>
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_2 }}</span>
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_3 }}</span>
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_4 }}</span>
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_5 }}</span>
+                                        <span class="lottery-ball red-ball">{{ pred.red_ball_6 }}</span>
+                                        <span class="lottery-ball blue-ball">{{ pred.blue_ball }}</span>
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ pred.get_prediction_type_display }}</td>
+                                <td class="d-none d-md-table-cell">{{ pred.created_at|date:"Y-m-d H:i" }}</td>
+                                <td class="d-none d-md-table-cell">
+                                    {% if pred.is_drawn %}
+                                        {% if pred.is_hit %}
+                                            <span class="badge bg-success">命中{{ pred.hit_prize_level }}等奖</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">未中奖</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">待开奖</span>
                                     {% endif %}
                                 </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">暂无记录</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -141,11 +240,11 @@
                 </div>
 
                 <!-- 分页 -->
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
+                <nav aria-label="Page navigation" class="mt-3 mb-3">
+                    <ul class="pagination justify-content-center flex-wrap">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1">&laquo; 首��</a>
+                                <a class="page-link" href="?page=1">&laquo; 首页</a>
                             </li>
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
@@ -193,10 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const iconEl = document.getElementById('toastIcon');
         const messageEl = document.getElementById('toastMessage');
         
-        // 重置样式
         toastEl.className = 'toast align-items-center border-0 shadow-lg';
         
-        // 设置样式和图标
         if (type === 'success') {
             toastEl.classList.add('bg-success', 'text-white');
             iconEl.className = 'bi bi-check-circle-fill me-2';
@@ -222,18 +319,37 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayNumbers(container, numbers) {
         container.innerHTML = '';
         const [redBalls, blueBall] = numbers;
-        redBalls.forEach(num => {
-            container.appendChild(createBallElement(num));
-        });
-        container.appendChild(createBallElement(blueBall, true));
         
-        // 添加记录按钮
+        const predictionGroup = document.createElement('div');
+        predictionGroup.className = 'prediction-group';
+        
+        const ballsDiv = document.createElement('div');
+        ballsDiv.className = 'lottery-numbers mb-2';
+        
+        redBalls.forEach(num => {
+            ballsDiv.appendChild(createBallElement(num));
+        });
+        ballsDiv.appendChild(createBallElement(blueBall, true));
+        
+        predictionGroup.appendChild(ballsDiv);
+        
+        const btnDiv = document.createElement('div');
+        btnDiv.className = 'text-end';
+        
         const saveBtn = document.createElement('button');
-        saveBtn.className = 'btn btn-outline-primary btn-sm mt-2 save-btn';
+        saveBtn.className = 'btn btn-outline-primary btn-sm save-btn';
         saveBtn.textContent = '记录本次选号';
         saveBtn.dataset.redBalls = JSON.stringify(redBalls);
         saveBtn.dataset.blueBall = blueBall;
-        container.appendChild(saveBtn);
+        
+        saveBtn.addEventListener('click', function() {
+            const type = this.closest('.card').querySelector('.card-title').textContent.includes('随机') ? 'random' : 'analysis';
+            savePrediction(redBalls, blueBall, type);
+        });
+        
+        btnDiv.appendChild(saveBtn);
+        predictionGroup.appendChild(btnDiv);
+        container.appendChild(predictionGroup);
     }
 
     async function updatePredictionsList() {
@@ -258,12 +374,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.data.status === 'success') {
                 showToast('预测号码已保存');
-                // 只更新预测记录列表
-                updatePredictionsList();
+                setTimeout(async () => {
+                    await updatePredictionsList();
+                }, 500);
             } else {
                 showToast(response.data.message || '保存失败', 'error');
             }
         } catch (error) {
+            console.error('保存预测失败:', error);
             showToast(error.response?.data?.message || '保存失败', 'error');
         }
     }
@@ -279,13 +397,12 @@ document.addEventListener('DOMContentLoaded', function() {
             response.data.predictions.forEach((pred, index) => {
                 const predDiv = document.createElement('div');
                 predDiv.className = 'mb-3';
-                predDiv.innerHTML = `<small>随机${index + 1}：</small>`;
-                const ballsDiv = document.createElement('div');
-                displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
-                predDiv.appendChild(ballsDiv);
+                predDiv.innerHTML = `<div class="prediction-label">随机${index + 1}：</div>`;
+                displayNumbers(predDiv, [pred.red_balls, pred.blue_ball]);
                 randomBalls.appendChild(predDiv);
             });
         } catch (error) {
+            console.error('生成随机号码失败:', error);
             showToast('生成随机号码失败', 'error');
         } finally {
             randomBtn.disabled = false;
@@ -305,10 +422,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 response.data.predictions.forEach((pred, index) => {
                     const predDiv = document.createElement('div');
                     predDiv.className = 'mb-3';
-                    predDiv.innerHTML = `<small>预测${index + 1}：</small>`;
-                    const ballsDiv = document.createElement('div');
-                    displayNumbers(ballsDiv, [pred.red_balls, pred.blue_ball]);
-                    predDiv.appendChild(ballsDiv);
+                    predDiv.innerHTML = `<div class="prediction-label">预测${index + 1}：</div>`;
+                    displayNumbers(predDiv, [pred.red_balls, pred.blue_ball]);
                     predictBalls.appendChild(predDiv);
                 });
             } else {
@@ -322,17 +437,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 为所有记录按钮添加点击事件（使用事件委托）
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('save-btn')) {
-            const redBalls = JSON.parse(e.target.dataset.redBalls);
-            const blueBall = parseInt(e.target.dataset.blueBall);
-            const type = e.target.closest('.card').querySelector('.card-title').textContent.includes('随机') ? 'random' : 'analysis';
-            savePrediction(redBalls, blueBall, type);
-        }
-    });
-
-    // 为分页链接添加点击事件（使用事件委托）
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('page-link')) {
             e.preventDefault();

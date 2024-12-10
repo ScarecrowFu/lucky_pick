@@ -68,7 +68,7 @@ def generate_random(request):
     """生成随机号码"""
     predictor = LotteryPredictor()
     
-    # 获��最新期号
+    # 获取最新期号
     latest_record = LotteryHistory.objects.all().order_by('-draw_num').first()
     next_draw_num = str(int(latest_record.draw_num) + 1) if latest_record else "未知"
     
@@ -131,7 +131,7 @@ def save_prediction(request):
         blue_ball = data.get('blue_ball')
         prediction_type = data.get('prediction_type')
         
-        if not all([draw_num, red_balls, blue_ball, prediction_type]) or len(red_balls) != 6:
+        if not all([draw_num, red_balls, blue_ball is not None, prediction_type]) or len(red_balls) != 6:
             return JsonResponse({
                 'status': 'error',
                 'message': '数据格式不正确'
@@ -143,21 +143,21 @@ def save_prediction(request):
         # 检查是否已经存在相同的预测
         existing = PredictionRecord.objects.filter(
             draw_num=draw_num,
+            red_ball_1=red_balls[0],
+            red_ball_2=red_balls[1],
+            red_ball_3=red_balls[2],
+            red_ball_4=red_balls[3],
+            red_ball_5=red_balls[4],
+            red_ball_6=red_balls[5],
+            blue_ball=blue_ball,
             prediction_type=prediction_type
-        )
+        ).exists()
         
-        # 检查是否有完全相同的号码组合
-        for record in existing:
-            record_red_balls = sorted([
-                record.red_ball_1, record.red_ball_2, record.red_ball_3,
-                record.red_ball_4, record.red_ball_5, record.red_ball_6
-            ])
-            if (record_red_balls == red_balls and 
-                record.blue_ball == blue_ball):
-                return JsonResponse({
-                    'status': 'error',
-                    'message': '该预测号码已经记录过了'
-                }, status=400)
+        if existing:
+            return JsonResponse({
+                'status': 'error',
+                'message': '该预测号码已经记录过了'
+            }, status=400)
             
         # 保存预测记录
         PredictionRecord.objects.create(
@@ -181,6 +181,8 @@ def save_prediction(request):
         })
         
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # 打印详细错误信息
         return JsonResponse({
             'status': 'error',
             'message': str(e)
@@ -215,65 +217,96 @@ def get_latest_predictions(request):
     paginator = Paginator(predictions, 20)
     page_obj = paginator.get_page(page)
     
-    # 获取最新期号
-    latest_record = LotteryHistory.objects.all().order_by('-draw_num').first()
-    latest_draw_num = latest_record.draw_num if latest_record else "0"
-    
     # 构建预测记录HTML
     predictions_html = []
     for pred in page_obj:
-        status_html = ""
-        if str(pred.draw_num) > latest_draw_num:
-            status_html = '<span class="badge bg-info">待开奖</span>'
-        else:
-            if pred.is_hit:
-                status_html = '<span class="badge bg-success">命中</span>'
-            else:
-                status_html = f'''
-                    <div>
-                        <span class="badge bg-secondary">未中奖</span>
-                        <small class="text-muted ms-2">
-                            红球: {pred.hit_count} 个
-                            , 蓝球: {'1' if pred.blue_hit else '0'} 个
-                            ({pred.hit_count}+{'1' if pred.blue_hit else '0'})
-                        </small>
+        # 构建移动端和PC端共用的HTML
+        row_html = f'''
+            <tr class="prediction-row">
+                <!-- 移动端显示 -->
+                <td class="d-md-none">
+                    <div class="prediction-mobile-view">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-primary">期号：{pred.draw_num}</span>
+                            {f'<span class="badge bg-success">命中{pred.hit_prize_level}等奖</span>' if pred.is_hit else
+                             '<span class="badge bg-secondary">未中奖</span>' if pred.is_drawn else
+                             '<span class="badge bg-warning text-dark">待开奖</span>'}
+                        </div>
+                        <div class="lottery-numbers mb-2">
+                            <span class="lottery-ball red-ball">{pred.red_ball_1}</span>
+                            <span class="lottery-ball red-ball">{pred.red_ball_2}</span>
+                            <span class="lottery-ball red-ball">{pred.red_ball_3}</span>
+                            <span class="lottery-ball red-ball">{pred.red_ball_4}</span>
+                            <span class="lottery-ball red-ball">{pred.red_ball_5}</span>
+                            <span class="lottery-ball red-ball">{pred.red_ball_6}</span>
+                            <span class="lottery-ball blue-ball">{pred.blue_ball}</span>
+                        </div>
+                        <div class="prediction-info">
+                            <small class="text-muted">
+                                {pred.get_prediction_type_display()} | 
+                                {pred.created_at.strftime('%Y-%m-%d %H:%M')}
+                            </small>
+                        </div>
                     </div>
-                '''
-                
-        pred_type = "随机选号" if pred.prediction_type == 'random' else "智能预测"
-        
-        row_html = f"""
-        <tr>
-            <td>{pred.draw_num}</td>
-            <td>
-                <span class="lottery-ball red-ball">{pred.red_ball_1}</span>
-                <span class="lottery-ball red-ball">{pred.red_ball_2}</span>
-                <span class="lottery-ball red-ball">{pred.red_ball_3}</span>
-                <span class="lottery-ball red-ball">{pred.red_ball_4}</span>
-                <span class="lottery-ball red-ball">{pred.red_ball_5}</span>
-                <span class="lottery-ball red-ball">{pred.red_ball_6}</span>
-                <span class="lottery-ball blue-ball">{pred.blue_ball}</span>
-            </td>
-            <td>{pred_type}</td>
-            <td>{pred.created_at.strftime('%Y-%m-%d %H:%M')}</td>
-            <td>{status_html}</td>
-        </tr>
-        """
+                </td>
+
+                <!-- PC端显示 -->
+                <td class="d-none d-md-table-cell">{pred.draw_num}</td>
+                <td class="d-none d-md-table-cell">
+                    <div class="lottery-numbers">
+                        <span class="lottery-ball red-ball">{pred.red_ball_1}</span>
+                        <span class="lottery-ball red-ball">{pred.red_ball_2}</span>
+                        <span class="lottery-ball red-ball">{pred.red_ball_3}</span>
+                        <span class="lottery-ball red-ball">{pred.red_ball_4}</span>
+                        <span class="lottery-ball red-ball">{pred.red_ball_5}</span>
+                        <span class="lottery-ball red-ball">{pred.red_ball_6}</span>
+                        <span class="lottery-ball blue-ball">{pred.blue_ball}</span>
+                    </div>
+                </td>
+                <td class="d-none d-md-table-cell">{pred.get_prediction_type_display()}</td>
+                <td class="d-none d-md-table-cell">{pred.created_at.strftime('%Y-%m-%d %H:%M')}</td>
+                <td class="d-none d-md-table-cell">
+                    {f'<span class="badge bg-success">命中{pred.hit_prize_level}等奖</span>' if pred.is_hit else
+                     '<span class="badge bg-secondary">未中奖</span>' if pred.is_drawn else
+                     '<span class="badge bg-warning text-dark">待开奖</span>'}
+                </td>
+            </tr>
+        '''
         predictions_html.append(row_html)
+    
+    # 如果没有记录，显示空状态
+    if not predictions_html:
+        predictions_html.append('<tr><td colspan="5" class="text-center">暂无记录</td></tr>')
     
     # 构建分页HTML
     pagination_html = []
     if page_obj.has_previous():
-        pagination_html.append(f'<li class="page-item"><a class="page-link" href="?page=1">&laquo; 首页</a></li>')
-        pagination_html.append(f'<li class="page-item"><a class="page-link" href="?page={page_obj.previous_page_number()}">上一页</a></li>')
+        pagination_html.extend([
+            '<li class="page-item">',
+            f'<a class="page-link" href="?page=1">&laquo; 首页</a>',
+            '</li>',
+            '<li class="page-item">',
+            f'<a class="page-link" href="?page={page_obj.previous_page_number()}">上一页</a>',
+            '</li>'
+        ])
     
-    pagination_html.append(f'<li class="page-item active"><span class="page-link">{page_obj.number} / {page_obj.paginator.num_pages}</span></li>')
+    pagination_html.extend([
+        '<li class="page-item active">',
+        f'<span class="page-link">{page_obj.number} / {page_obj.paginator.num_pages}</span>',
+        '</li>'
+    ])
     
     if page_obj.has_next():
-        pagination_html.append(f'<li class="page-item"><a class="page-link" href="?page={page_obj.next_page_number()}">下一页</a></li>')
-        pagination_html.append(f'<li class="page-item"><a class="page-link" href="?page={page_obj.paginator.num_pages}">末页 &raquo;</a></li>')
+        pagination_html.extend([
+            '<li class="page-item">',
+            f'<a class="page-link" href="?page={page_obj.next_page_number()}">下一页</a>',
+            '</li>',
+            '<li class="page-item">',
+            f'<a class="page-link" href="?page={page_obj.paginator.num_pages}">末页 &raquo;</a>',
+            '</li>'
+        ])
     
     return JsonResponse({
-        'predictions_html': '\n'.join(predictions_html),
-        'pagination_html': '\n'.join(pagination_html)
+        'predictions_html': ''.join(predictions_html),
+        'pagination_html': ''.join(pagination_html)
     })
