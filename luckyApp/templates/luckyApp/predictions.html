@@ -177,7 +177,7 @@
                                             <span class="text-primary">期号：{{ pred.draw_num }}</span>
                                             {% if pred.is_drawn %}
                                                 {% if pred.is_hit %}
-                                                    <span class="badge bg-success">命中{{ pred.hit_prize_level }}等奖</span>
+                                                    <span class="badge bg-success">命中{{ pred.hit_prize_level }}等奖({{ pred.hit_count }}+{{ pred.blue_hit }})</span>
                                                 {% else %}
                                                     <span class="badge bg-secondary">未中奖</span>
                                                 {% endif %}
